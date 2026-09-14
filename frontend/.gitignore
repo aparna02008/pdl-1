@@ -1,0 +1,10 @@
+node_modules/
+__pycache__/
+*.pyc
+.env
+backend/uploads/
+ai-ml/database/images/
+ai-ml/database/labels/
+ai-ml/models/*.pt
+ai-ml/models/*.joblib
+.DS_Store
