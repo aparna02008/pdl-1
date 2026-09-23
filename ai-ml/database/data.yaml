@@ -1,0 +1,19 @@
+# Unified 8-class scheme for CiviSense. Every source dataset gets REMAPPED to
+# these class indices before being merged in — see scripts/remap_and_merge.py.
+# Do not add images/labels directly with a source dataset's own numbering;
+# they will not match this list and will silently corrupt training.
+
+train: images/train
+val: images/val
+test: images/test
+
+nc: 8
+names:
+  - pothole
+  - speed_breaker
+  - unpaved_road
+  - garbage
+  - waterlogging
+  - open_manhole
+  - damaged_road_sign
+  - illegal_parking

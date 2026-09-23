@@ -1,0 +1,64 @@
+:root {
+  /* Base palette — inspired by road surface, signage, and municipal paperwork,
+     not the default cream/terracotta AI palette. */
+  --asphalt-900: #1E2321;      /* near-black, road surface */
+  --asphalt-700: #34403C;      /* body text */
+  --asphalt-400: #6B7A74;      /* secondary text */
+  --asphalt-200: #C7D0CB;      /* borders on dark */
+  --surface: #EFEEE7;          /* road-marking off-white, warm paper */
+  --surface-raised: #FBFAF6;   /* cards */
+  --line: #DAD7CC;             /* hairline borders */
+
+  --signal-amber: #D98A2B;     /* roadwork signage amber — primary accent */
+  --signal-amber-dark: #B06F1E;
+  --civic-teal: #3F6659;       /* municipal seal teal — secondary accent */
+  --civic-teal-dark: #2E4D43;
+  --alert-red: #B3402E;        /* errors, only */
+  --alert-red-bg: #F6E7E3;
+  --confirm-green: #3F6659;
+  --confirm-green-bg: #E8EFEA;
+
+  --font-display: 'Space Grotesk', ui-sans-serif, system-ui, sans-serif;
+  --font-body: 'Inter', ui-sans-serif, system-ui, sans-serif;
+
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --shadow-card: 0 1px 2px rgba(30, 35, 33, 0.06), 0 1px 0 rgba(30, 35, 33, 0.04);
+  --shadow-raised: 0 4px 14px rgba(30, 35, 33, 0.10);
+}
+
+* { box-sizing: border-box; }
+
+html, body, #root {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  background: var(--surface);
+  color: var(--asphalt-700);
+  font-family: var(--font-body);
+  font-size: 15px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1, h2, h3 {
+  font-family: var(--font-display);
+  color: var(--asphalt-900);
+  margin: 0;
+  letter-spacing: -0.01em;
+}
+
+button {
+  font-family: var(--font-body);
+}
+
+:focus-visible {
+  outline: 2px solid var(--civic-teal);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+}

@@ -8,3 +8,5 @@ ai-ml/database/labels/
 ai-ml/models/*.pt
 ai-ml/models/*.joblib
 .DS_Store
+ai-ml/database.zip 
+ai-ml/runs/

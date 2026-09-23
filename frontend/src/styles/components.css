@@ -1,0 +1,316 @@
+.report-grid {
+  display: grid;
+  grid-template-columns: 1.3fr 1fr;
+  gap: 20px;
+  align-items: start;
+}
+
+@media (max-width: 900px) {
+  .report-grid { grid-template-columns: 1fr; }
+}
+
+.card {
+  background: var(--surface-raised);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-card);
+  padding: 24px;
+}
+
+.card + .card { margin-top: 16px; }
+
+.report-grid .card + .card { margin-top: 0; }
+
+.card--fill {
+  height: 100%;
+}
+
+.field { margin-bottom: 20px; }
+
+.field label {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--asphalt-700);
+  margin-bottom: 6px;
+}
+
+.field__hint {
+  font-size: 12px;
+  color: var(--asphalt-400);
+  margin-top: 5px;
+}
+
+.field textarea,
+.field input[type="text"] {
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  padding: 10px 12px;
+  font-family: var(--font-body);
+  font-size: 14px;
+  color: var(--asphalt-900);
+  background: var(--surface-raised);
+  resize: vertical;
+  transition: border-color 120ms ease;
+}
+
+.field textarea:focus,
+.field input[type="text"]:focus {
+  border-color: var(--civic-teal);
+}
+
+/* --- Dropzone: styled like a stenciled road-marking box, not a generic dashed square --- */
+.dropzone {
+  border: 2px dashed var(--asphalt-200);
+  border-radius: var(--radius-md);
+  padding: 28px 20px;
+  text-align: center;
+  cursor: pointer;
+  background: repeating-linear-gradient(
+    45deg,
+    transparent,
+    transparent 10px
+  );
+  transition: border-color 150ms ease, background-color 150ms ease;
+}
+
+.dropzone.is-dragging {
+  border-color: var(--signal-amber);
+  background-color: rgba(217, 138, 43, 0.06);
+}
+
+.dropzone__icon {
+  color: var(--asphalt-400);
+  margin-bottom: 10px;
+}
+
+.dropzone__title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--asphalt-700);
+}
+
+.dropzone__sub {
+  font-size: 12.5px;
+  color: var(--asphalt-400);
+  margin-top: 3px;
+}
+
+.thumb-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.thumb {
+  position: relative;
+  width: 72px;
+  height: 72px;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  border: 1px solid var(--line);
+}
+
+.thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+.thumb__remove {
+  position: absolute;
+  top: 3px;
+  right: 3px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: rgba(30, 35, 33, 0.75);
+  color: #fff;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 0;
+  line-height: 0;
+}
+
+.thumb__remove:hover { background: var(--alert-red); }
+
+/* --- Voice note recorder --- */
+.recorder {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  padding: 10px 14px;
+}
+
+.recorder__btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: none;
+  background: var(--civic-teal);
+  color: var(--surface-raised);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background-color 120ms ease, transform 100ms ease;
+}
+
+.recorder__btn:hover { background: var(--civic-teal-dark); }
+.recorder__btn.is-recording { background: var(--alert-red); animation: pulse 1.4s ease-in-out infinite; }
+
+@keyframes pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(179, 64, 46, 0.35); }
+  50% { box-shadow: 0 0 0 6px rgba(179, 64, 46, 0); }
+}
+
+.recorder__status { font-size: 13px; color: var(--asphalt-400); }
+.recorder__clip { font-size: 13px; color: var(--asphalt-700); font-weight: 500; }
+
+/* --- GPS location control --- */
+.locate {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  padding: 10px 14px;
+}
+
+.locate__icon { color: var(--civic-teal); flex-shrink: 0; }
+.locate__text { font-size: 13.5px; color: var(--asphalt-700); flex: 1; }
+.locate__action {
+  background: none;
+  border: none;
+  color: var(--civic-teal-dark);
+  font-weight: 600;
+  font-size: 13px;
+  cursor: pointer;
+  padding: 4px 8px;
+}
+.locate__action:hover { text-decoration: underline; }
+
+/* --- Buttons --- */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border: none;
+  border-radius: var(--radius-sm);
+  padding: 11px 20px;
+  font-size: 14px;
+  font-weight: 600;
+  font-family: var(--font-body);
+  cursor: pointer;
+  transition: background-color 120ms ease, transform 80ms ease;
+}
+
+.btn:active { transform: scale(0.98); }
+
+.btn--primary { background: var(--signal-amber); color: var(--asphalt-900); }
+.btn--primary:hover { background: var(--signal-amber-dark); }
+.btn--primary:disabled { background: var(--asphalt-200); color: var(--asphalt-400); cursor: not-allowed; }
+
+.btn--ghost {
+  background: transparent;
+  border: 1px solid var(--line);
+  color: var(--asphalt-700);
+}
+.btn--ghost:hover { border-color: var(--asphalt-400); }
+
+/* --- Status banners (submission result, errors, empty states) --- */
+.banner {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  border-radius: var(--radius-sm);
+  padding: 12px 14px;
+  font-size: 13.5px;
+  margin-bottom: 18px;
+}
+
+.banner--error { background: var(--alert-red-bg); color: var(--alert-red); }
+.banner--success { background: var(--confirm-green-bg); color: var(--civic-teal-dark); }
+
+/* --- Complaint list --- */
+.complaint {
+  display: flex;
+  gap: 14px;
+  padding: 16px 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.complaint:last-child { border-bottom: none; }
+
+.complaint__thumb {
+  width: 56px;
+  height: 56px;
+  border-radius: var(--radius-sm);
+  object-fit: cover;
+  flex-shrink: 0;
+  background: var(--line);
+}
+
+.complaint__body { flex: 1; min-width: 0; }
+
+.complaint__top {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.complaint__desc {
+  font-size: 14px;
+  color: var(--asphalt-900);
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.complaint__meta {
+  font-size: 12.5px;
+  color: var(--asphalt-400);
+  margin-top: 3px;
+}
+
+.status-pill {
+  font-size: 11.5px;
+  font-weight: 600;
+  padding: 3px 9px;
+  border-radius: 999px;
+  white-space: nowrap;
+  height: fit-content;
+}
+
+.status-pill--submitted { background: #EDE7DB; color: var(--asphalt-700); }
+.status-pill--in_progress { background: rgba(217, 138, 43, 0.16); color: var(--signal-amber-dark); }
+.status-pill--resolved { background: var(--confirm-green-bg); color: var(--civic-teal-dark); }
+
+.empty-state {
+  text-align: center;
+  padding: 48px 20px;
+  color: var(--asphalt-400);
+}
+
+.empty-state svg { margin-bottom: 12px; opacity: 0.6; }
+.empty-state p { font-size: 14px; margin: 0; }
+
+.skeleton-row {
+  height: 56px;
+  border-radius: var(--radius-sm);
+  background: linear-gradient(90deg, var(--line) 25%, #EAE7DC 37%, var(--line) 63%);
+  background-size: 400% 100%;
+  animation: shimmer 1.4s ease infinite;
+  margin-bottom: 10px;
+}
+
+@keyframes shimmer {
+  0% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
