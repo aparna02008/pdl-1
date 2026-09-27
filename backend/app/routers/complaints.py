@@ -1,14 +1,3 @@
-
-import sys
-import os
-
-sys.path.append(os.path.join(os.path.dirname(__file__), "..", "..", "ai-ml"))
-
-from image_quality import check_images
-from description_generator import generate_description
-from duplicate_detection import find_duplicate
-from recurrence_detection import find_recurrence
-
 from typing import Optional
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
@@ -45,7 +34,7 @@ def _to_out(c: Complaint) -> ComplaintOut:
 
 @router.post("", response_model=ComplaintOut, status_code=201)
 async def create_complaint(
-    description: Optional[str] = Form(None),
+    description: str = Form(...),
     lat: Optional[float] = Form(None),
     lng: Optional[float] = Form(None),
     address: Optional[str] = Form(None),
@@ -53,52 +42,11 @@ async def create_complaint(
     voice_note: Optional[UploadFile] = File(default=None),
     db: Session = Depends(get_db),
 ):
-    if not photos or all(not p.filename for p in photos):
-        raise HTTPException(status_code=400, detail="At least one photo is required")
-
-    saved_photo_paths = []
-    for photo in photos:
-        if not photo.filename:
-            continue
-        path = await save_photo(photo)
-        saved_photo_paths.append(path)
-
-    quality_results = check_images(saved_photo_paths)
-    bad_photos = [r for r in quality_results if r["status"] != "ok"]
-    if bad_photos:
-        raise HTTPException(
-            status_code=400,
-            detail=f"Photo quality issue: {bad_photos[0]['status']}. Please retake the photo.",
-        )
-
-    duplicate_match = None
-    if lat is not None and lng is not None:
-        open_complaints = (
-            db.query(Complaint)
-            .filter(Complaint.status != ComplaintStatus.resolved)
-            .all()
-        )
-        existing_for_check = [
-            {
-                "id": c.id,
-                "latitude": c.lat,
-                "longitude": c.lng,
-                "image_path": c.photos[0].file_path if c.photos else None,
-                "category": c.issue_type,
-                "status": c.status.value if hasattr(c.status, "value") else c.status,
-            }
-            for c in open_complaints
-            if c.lat is not None and c.lng is not None and c.photos
-        ]
-        duplicate_match = find_duplicate(
-            {"latitude": lat, "longitude": lng, "image_path": saved_photo_paths[0], "category": None},
-            existing_for_check,
-        )
-
-    final_description = description.strip() if description and description.strip() else "No description provided."
+    if not description or not description.strip():
+        raise HTTPException(status_code=400, detail="Description is required")
 
     complaint = Complaint(
-        description=final_description,
+        description=description.strip(),
         lat=lat,
         lng=lng,
         address=address,
@@ -108,24 +56,23 @@ async def create_complaint(
         complaint.voice_note_path = await save_voice_note(voice_note)
 
     db.add(complaint)
-    db.flush()
+    db.flush()  # get complaint.id before attaching photos
 
-    for path in saved_photo_paths:
+    for photo in photos:
+        if not photo.filename:
+            continue
+        path = await save_photo(photo)
         db.add(ComplaintPhoto(complaint_id=complaint.id, file_path=path))
 
     db.commit()
     db.refresh(complaint)
 
-    result = _to_out(complaint)
-    if duplicate_match:
-        result_dict = result.model_dump()
-        result_dict["duplicate_warning"] = {
-            "matched_complaint_id": duplicate_match["id"],
-            "distance_meters": duplicate_match["distance_meters"],
-        }
-        return result_dict
+    # NOTE: no severity/priority is computed here. The ai-ml pipeline is a
+    # separate, honest step — see ai-ml/README.md. Until it runs against
+    # this complaint, ai_status stays "unavailable" rather than a fabricated
+    # score, per the project's no-fake-AI rule.
 
-    return result
+    return _to_out(complaint)
 
 
 @router.get("", response_model=list[ComplaintOut])
