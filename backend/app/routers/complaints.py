@@ -8,6 +8,7 @@ from description_generator import generate_description
 from duplicate_detection import find_duplicate
 from recurrence_detection import find_recurrence
 from voice_to_text import transcribe_voice_note
+from yolo_detector import detect
 
 from typing import Optional
 
@@ -56,7 +57,7 @@ async def create_complaint(
     if not photos or all(not p.filename for p in photos):
         raise HTTPException(status_code=400, detail="At least one photo is required")
 
-    # 1. Save photos to disk first so quality check can run on real files
+    # 1. Save photos to disk first so quality check and detection can run on real files
     saved_photo_paths = []
     for photo in photos:
         if not photo.filename:
@@ -73,7 +74,24 @@ async def create_complaint(
             detail=f"Photo quality issue: {bad_photos[0]['status']}. Please retake the photo.",
         )
 
-    # 3. Duplicate check — against currently OPEN complaints, only if we have a location
+    # 3. YOLO detection — real model, run on the first photo. If the model is
+    #    unavailable or finds nothing, issue_type/ai_status stay honest
+    #    ("unavailable"/"no_detection") rather than a fabricated category.
+    detection_result = detect(saved_photo_paths[0])
+    top_detection = None
+    if detection_result["status"] == "ok" and detection_result["detections"]:
+        top_detection = detection_result["detections"][0]
+
+    if detection_result["status"] != "ok":
+        ai_status = "unavailable"
+    elif top_detection is None:
+        ai_status = "no_detection"
+    else:
+        ai_status = "detected"
+
+    detected_category = top_detection["category"] if top_detection else None
+
+    # 4. Duplicate check — against currently OPEN complaints, only if we have a location
     duplicate_match = None
     if lat is not None and lng is not None:
         open_complaints = (
@@ -94,11 +112,11 @@ async def create_complaint(
             if c.lat is not None and c.lng is not None and c.photos
         ]
         duplicate_match = find_duplicate(
-            {"latitude": lat, "longitude": lng, "image_path": saved_photo_paths[0], "category": None},
+            {"latitude": lat, "longitude": lng, "image_path": saved_photo_paths[0], "category": detected_category},
             existing_for_check,
         )
 
-    # 4. Recurrence check — against RESOLVED complaints, only if not already a duplicate
+    # 5. Recurrence check — against RESOLVED complaints, only if not already a duplicate
     recurrence_match = None
     if lat is not None and lng is not None and duplicate_match is None:
         resolved_complaints = (
@@ -118,11 +136,11 @@ async def create_complaint(
             if c.lat is not None and c.lng is not None and c.photos
         ]
         recurrence_match = find_recurrence(
-            {"latitude": lat, "longitude": lng, "image_path": saved_photo_paths[0], "category": None},
+            {"latitude": lat, "longitude": lng, "image_path": saved_photo_paths[0], "category": detected_category},
             resolved_for_check,
         )
 
-    # 5. Voice note — save it, then transcribe with Whisper if present
+    # 6. Voice note — save it, then transcribe with Whisper if present
     voice_transcription = None
     voice_note_path = None
     if voice_note is not None and voice_note.filename:
@@ -131,14 +149,15 @@ async def create_complaint(
         if transcription_result["status"] == "ok" and transcription_result["text"]:
             voice_transcription = transcription_result["text"]
 
-    # 6. Description — use what the citizen typed; if empty, fall back to the
-    #    voice transcription; if that's also missing, use a plain placeholder.
-    #    (Auto-description from YOLO detection happens once the detection
-    #    pipeline runs on this complaint — not yet wired in, per ai-ml/README.md.)
+    # 7. Description priority: citizen typed > voice transcription >
+    #    auto-generated from real YOLO detection > plain placeholder.
+    #    Never invents a description when none of these are available.
     if description and description.strip():
         final_description = description.strip()
     elif voice_transcription:
         final_description = voice_transcription
+    elif top_detection:
+        final_description = generate_description(top_detection)
     else:
         final_description = "No description provided."
 
@@ -147,6 +166,8 @@ async def create_complaint(
         lat=lat,
         lng=lng,
         address=address,
+        issue_type=detected_category,
+        ai_status=ai_status,
     )
 
     if voice_note_path:
@@ -176,6 +197,8 @@ async def create_complaint(
         }
     if voice_transcription:
         result_dict["voice_transcription"] = voice_transcription
+    if detection_result["status"] != "ok":
+        result_dict["detection_note"] = detection_result["reason"]
 
     return result_dict
 
