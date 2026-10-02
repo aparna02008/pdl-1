@@ -9,6 +9,8 @@ from duplicate_detection import find_duplicate
 from recurrence_detection import find_recurrence
 from voice_to_text import transcribe_voice_note
 from yolo_detector import detect
+from severity import estimate_severity
+from priority import predict_priority
 
 from typing import Optional
 
@@ -91,6 +93,16 @@ async def create_complaint(
 
     detected_category = top_detection["category"] if top_detection else None
 
+    # 3.5. Severity + Priority — honest "unavailable" until real trained
+    #      models exist (see ai-ml/severity.py and ai-ml/priority.py)
+    severity_features = {
+        "category": detected_category,
+        "confidence": top_detection["confidence"] if top_detection else None,
+        "relative_size": top_detection["relative_size"] if top_detection else None,
+    }
+    severity_result = estimate_severity(severity_features)
+    priority_result = predict_priority(severity_features)
+
     # 4. Duplicate check — against currently OPEN complaints, only if we have a location
     duplicate_match = None
     if lat is not None and lng is not None:
@@ -168,6 +180,8 @@ async def create_complaint(
         address=address,
         issue_type=detected_category,
         ai_status=ai_status,
+        severity_score=severity_result.get("severity"),
+        priority_score=priority_result.get("priority"),
     )
 
     if voice_note_path:
@@ -199,6 +213,10 @@ async def create_complaint(
         result_dict["voice_transcription"] = voice_transcription
     if detection_result["status"] != "ok":
         result_dict["detection_note"] = detection_result["reason"]
+    if severity_result["status"] != "ok":
+        result_dict["severity_note"] = severity_result["reason"]
+    if priority_result["status"] != "ok":
+        result_dict["priority_note"] = priority_result["reason"]
 
     return result_dict
 
