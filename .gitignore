@@ -14,3 +14,6 @@ backend/ai-ml/runs/
 
 backend/civisense.db
 *.db
+
+backend/to_label.csv
+backend/labels_v1.csv
