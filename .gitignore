@@ -17,3 +17,5 @@ backend/civisense.db
 
 backend/to_label.csv
 backend/labels_v1.csv
+
+backend/labels_v1_backup.csv

@@ -1,0 +1,15 @@
+SEVERITY (label from description, not from category)
+1 = minor or nuisance (flickering light, clean-water leak, clogged drain, overflowing bin)
+2 = affects daily life (dead streetlight, blocked lane, garbage heap, slippery leak)
+3 = safety risk (deep pothole with swerving bikes, road dangerous after dark,
+    burst pipe, drain backing up, tree forcing pedestrians into the road)
+
+PRIORITY
+= severity, +1 for school, health centre, junction or main road crossing, max 3.
+Age rule (+1 if 7+ days old) NOT applied: created_at is synthetic for demo rows.
+
+NOTES
+- Category for training: reported_category (issue_type is None for demo rows)
+- Do not use reported_severity as a feature or label source
+- 90 rows are [DEMO] and templated, 3 are real complaints
+- Priority is skewed (15/35/43), and some categories lack some severities
