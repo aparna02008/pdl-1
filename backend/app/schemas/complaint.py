@@ -20,6 +20,9 @@ class ComplaintOut(BaseModel):
     lng: Optional[float] = None
     address: Optional[str] = None
 
+    reported_category: Optional[str] = None
+    reported_severity: Optional[str] = None
+
     photo_url: Optional[str] = None  # first photo, for the list-view thumbnail
     photos: list[ComplaintPhotoOut] = []
     voice_note_url: Optional[str] = None

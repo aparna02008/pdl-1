@@ -22,6 +22,7 @@ class Complaint(Base):
     __tablename__ = "complaints"
 
     id = Column(String, primary_key=True, default=gen_id)
+    user_id = Column(String, ForeignKey("users.id"), nullable=True)  # nullable: pre-auth complaints stay valid
     description = Column(Text, nullable=False)
 
     lat = Column(Float, nullable=True)
@@ -31,6 +32,11 @@ class Complaint(Base):
     voice_note_path = Column(String, nullable=True)
 
     status = Column(Enum(ComplaintStatus), default=ComplaintStatus.submitted, nullable=False)
+
+    # Citizen self-reported, at submission time — distinct from the AI-detected
+    # fields below. Optional; the categories mirror the ai-ml class list.
+    reported_category = Column(String, nullable=True)
+    reported_severity = Column(String, nullable=True)  # "low" | "medium" | "high" | "critical"
 
     # Populated by the ai-ml pipeline once it runs against this complaint.
     # Left null (not a fabricated value) until a real model has scored it —

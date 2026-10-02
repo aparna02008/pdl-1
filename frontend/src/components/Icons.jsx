@@ -102,6 +102,42 @@ export function IconEmptyBox(props) {
   )
 }
 
+export function IconGauge(props) {
+  return (
+    <svg {...base} {...props}>
+      <path d="M10 17a7 7 0 1 1 7-7" />
+      <path d="M10 10l3.5-4" />
+      <circle cx="10" cy="10" r="1" fill="currentColor" stroke="none" />
+    </svg>
+  )
+}
+
+export function IconShield(props) {
+  return (
+    <svg {...base} {...props}>
+      <path d="M10 2.5l6.5 2.7v4.8c0 4.5-2.9 7.1-6.5 8.3-3.6-1.2-6.5-3.8-6.5-8.3V5.2L10 2.5Z" />
+      <path d="M7.2 10l1.8 1.8 3.8-4" />
+    </svg>
+  )
+}
+
+export function IconBell(props) {
+  return (
+    <svg {...base} {...props}>
+      <path d="M5 8.5a5 5 0 0 1 10 0c0 3 1 4.5 1.5 5.5h-13C4 13 5 11.5 5 8.5Z" />
+      <path d="M8.2 16.5a1.8 1.8 0 0 0 3.6 0" />
+    </svg>
+  )
+}
+
+export function IconChevronDown(props) {
+  return (
+    <svg {...base} {...props}>
+      <path d="M5 7.5l5 5 5-5" />
+    </svg>
+  )
+}
+
 export function LogoMark(props) {
   // A road-marker chevron inside a badge — reads as "civic infrastructure",
   // not a generic abstract blob mark.

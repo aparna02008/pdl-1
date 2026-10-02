@@ -27,7 +27,7 @@ export default function Sidebar() {
       </nav>
 
       <div className="sidebar__footer">
-        CiviSense · civic issue reporting
+        <div className="sidebar__footer-tagline">Together for a better tomorrow.</div>
       </div>
     </aside>
   )

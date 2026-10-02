@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { fetchComplaints } from '../api/complaints'
+import { fetchMyComplaints } from '../api/complaints'
 import { IconEmptyBox, IconAlert } from '../components/Icons'
 
 const STATUS_LABEL = {
@@ -13,7 +13,7 @@ export default function MyComplaints() {
 
   useEffect(() => {
     let cancelled = false
-    fetchComplaints()
+    fetchMyComplaints()
       .then((data) => { if (!cancelled) setState({ loading: false, error: null, data }) })
       .catch((err) => { if (!cancelled) setState({ loading: false, error: err.message, data: [] }) })
     return () => { cancelled = true }

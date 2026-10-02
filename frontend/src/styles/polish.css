@@ -1,0 +1,133 @@
+/* --- Page entrance: one quiet fade-and-rise, not per-element --- */
+.page-content {
+  animation: page-in 320ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes page-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .page-content { animation: none; }
+}
+
+/* --- Toast: the confirmation channel, separate from inline banners --- */
+.toast {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  background: var(--asphalt-900);
+  color: var(--surface);
+  padding: 12px 16px;
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-raised);
+  font-size: 13.5px;
+  font-weight: 500;
+  max-width: 340px;
+  animation: toast-in 260ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.toast svg { color: var(--signal-amber); flex-shrink: 0; }
+
+.toast--leaving {
+  animation: toast-out 340ms ease forwards;
+}
+
+@keyframes toast-in {
+  from { opacity: 0; transform: translateY(-10px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes toast-out {
+  to { opacity: 0; transform: translateY(-8px) scale(0.98); }
+}
+
+@media (max-width: 600px) {
+  .toast { left: 16px; right: 16px; max-width: none; }
+}
+
+/* --- Buttons: satisfying press, no generic bounce --- */
+.btn {
+  position: relative;
+  transition: background-color 140ms ease, transform 90ms ease, box-shadow 140ms ease;
+}
+
+.btn--primary:not(:disabled):hover {
+  box-shadow: 0 2px 8px rgba(217, 138, 43, 0.35);
+}
+
+.btn:active:not(:disabled) { transform: scale(0.97); }
+
+/* --- Signature moment: submit button morphs to a confirmed state --- */
+.btn--success {
+  background: var(--civic-teal) !important;
+  color: var(--surface-raised) !important;
+  animation: success-pulse 480ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes success-pulse {
+  0% { transform: scale(1); }
+  35% { transform: scale(1.045); }
+  100% { transform: scale(1); }
+}
+
+.btn--success .btn__check {
+  display: inline-flex;
+  animation: check-in 340ms cubic-bezier(0.34, 1.56, 0.64, 1) 80ms both;
+}
+
+@keyframes check-in {
+  from { opacity: 0; transform: scale(0.4) rotate(-20deg); }
+  to { opacity: 1; transform: scale(1) rotate(0deg); }
+}
+
+/* --- Cards: quiet lift on hover where it means something (clickable rows) --- */
+.dropzone {
+  transition: border-color 150ms ease, background-color 150ms ease, transform 120ms ease;
+}
+
+.dropzone:active { transform: scale(0.995); }
+
+/* --- Thumbnails: staggered entrance when photos are added --- */
+.thumb {
+  animation: thumb-in 260ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes thumb-in {
+  from { opacity: 0; transform: scale(0.85); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+/* --- Sidebar link: refined active-state transition --- */
+.sidebar__link {
+  transition: background-color 140ms ease, color 140ms ease, transform 100ms ease;
+}
+
+.sidebar__link:active { transform: scale(0.98); }
+
+/* --- Complaint rows: subtle entrance when the list loads --- */
+.complaint {
+  animation: row-in 280ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.complaint:nth-child(1) { animation-delay: 0ms; }
+.complaint:nth-child(2) { animation-delay: 30ms; }
+.complaint:nth-child(3) { animation-delay: 60ms; }
+.complaint:nth-child(4) { animation-delay: 90ms; }
+.complaint:nth-child(5) { animation-delay: 120ms; }
+
+@keyframes row-in {
+  from { opacity: 0; transform: translateX(-4px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .toast, .btn--success, .btn--success .btn__check, .thumb, .complaint {
+    animation: none !important;
+  }
+}

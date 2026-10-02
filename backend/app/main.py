@@ -6,10 +6,11 @@ from fastapi.staticfiles import StaticFiles
 
 from app.config import settings
 from app.database import Base, engine
-from app.routers import complaints
+from app.routers import complaints, auth
 
 # Import models so Base.metadata knows about them before create_all runs.
 from app.models import complaint as _complaint_models  # noqa: F401
+from app.models import user as _user_models  # noqa: F401
 
 Base.metadata.create_all(bind=engine)
 
@@ -27,6 +28,7 @@ app.add_middleware(
 
 app.mount("/uploads", StaticFiles(directory=settings.upload_dir), name="uploads")
 
+app.include_router(auth.router)
 app.include_router(complaints.router)
 
 
