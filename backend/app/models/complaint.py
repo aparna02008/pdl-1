@@ -31,6 +31,9 @@ class Complaint(Base):
 
     voice_note_path = Column(String, nullable=True)
 
+    # NEW: optional "after" photo, uploaded when the admin marks the complaint resolved.
+    after_photo_path = Column(String, nullable=True)
+
     status = Column(Enum(ComplaintStatus), default=ComplaintStatus.submitted, nullable=False)
 
     # Citizen self-reported, at submission time — distinct from the AI-detected

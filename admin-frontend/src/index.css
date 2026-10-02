@@ -168,3 +168,13 @@ select.status-select {
 }
 
 .muted { color: var(--color-text-muted); }
+
+.badge-escalated {
+  background: var(--color-danger-soft);
+  color: var(--color-danger);
+  border-radius: var(--radius-sm);
+  padding: 2px 8px;
+  font-size: 12px;
+  font-weight: 600;
+  margin-right: 8px;
+}

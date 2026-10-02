@@ -26,11 +26,14 @@ class ComplaintOut(BaseModel):
     photo_url: Optional[str] = None  # first photo, for the list-view thumbnail
     photos: list[ComplaintPhotoOut] = []
     voice_note_url: Optional[str] = None
+    after_photo_url: Optional[str] = None  # NEW
 
     issue_type: Optional[str] = None
     severity_score: Optional[float] = None
     priority_score: Optional[float] = None
     ai_status: str = "unavailable"
+
+    escalated: bool = False  # NEW
 
     created_at: datetime
 
