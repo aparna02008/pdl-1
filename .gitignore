@@ -11,3 +11,5 @@ ai-ml/models/*.joblib
 ai-ml/database.zip 
 ai-ml/runs/backend/civisense.db
 backend/ai-ml/runs/
+backend/civisense.db
+backend/uploads/
