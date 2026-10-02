@@ -109,9 +109,9 @@ function StatsRow({ stats, totalKnown }) {
   // If the stats endpoint isn't available, fall back to counting what we
   // already loaded rather than inventing numbers.
   const total = stats?.total ?? totalKnown;
-  const submitted = stats?.submitted ?? "—";
-  const inProgress = stats?.in_progress ?? "—";
-  const resolved = stats?.resolved ?? "—";
+  const submitted = stats?.by_status?.submitted ?? "—";
+  const inProgress = stats?.by_status?.in_progress ?? "—";
+  const resolved = stats?.by_status?.resolved ?? "—";
 
   return (
     <div style={styles.statsGrid}>
@@ -156,13 +156,13 @@ function ComplaintTable({ complaints, onStatusChange, emptyText }) {
               <td>{c.id}</td>
               <td>{c.issue_type ?? <span className="muted">AI: unavailable</span>}</td>
               <td>
-                {c.priority?.status === "unavailable" || c.priority == null
+                {c.priority_score?.status === "unavailable" || c.priority_score == null
                   ? <span className="muted">Not available</span>
-                  : c.priority}
+                  : c.priority_score}
               </td>
               <td>
-                {c.latitude != null && c.longitude != null
-                  ? `${c.latitude.toFixed(4)}, ${c.longitude.toFixed(4)}`
+                {c.lat != null && c.lng != null
+                  ? `${c.lat.toFixed(4)}, ${c.lng.toFixed(4)}`
                   : <span className="muted">—</span>}
               </td>
               <td>

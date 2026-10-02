@@ -60,7 +60,7 @@ export default function MyComplaints() {
                 </span>
               </div>
               <div className="complaint__meta">
-                {c.address || (c.lat ? `${c.lat.toFixed(4)}, ${c.lng.toFixed(4)}` : 'No location')} · {new Date(c.created_at).toLocaleDateString()}
+                {c.address || (c.lat != null && c.lng != null ? `${c.lat.toFixed(4)}, ${c.lng.toFixed(4)}` : 'No location')} · {new Date(c.created_at).toLocaleDateString()}
               </div>
             </div>
           </div>
