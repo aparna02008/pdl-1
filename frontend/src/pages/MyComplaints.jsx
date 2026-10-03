@@ -1,13 +1,15 @@
 import { useEffect, useState } from 'react'
 import { fetchMyComplaints } from '../api/complaints'
 import { IconEmptyBox, IconAlert } from '../components/Icons'
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000'
+
+const API_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'
 
 function fileUrl(path) {
   if (!path) return null
   if (path.startsWith('http')) return path
   return `${API_URL}${path.startsWith('/') ? '' : '/'}${path}`
 }
+
 const STATUS_LABEL = {
   submitted: 'Submitted',
   in_progress: 'In progress',
