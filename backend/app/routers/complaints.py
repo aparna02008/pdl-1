@@ -1,10 +1,10 @@
 from collections import defaultdict
-from datetime import datetime, timedelta
-from typing import Optional
+from datetime import datetime, timedelta, timezone
+from typing import Literal, Optional
 
-from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
+from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, UploadFile
 from pydantic import BaseModel
-from sqlalchemy import func
+from sqlalchemy import String, cast, func
 from sqlalchemy.orm import Session
 
 from app.auth import get_current_user
@@ -12,6 +12,7 @@ from app.database import get_db
 from app.models.complaint import Complaint, ComplaintPhoto, ComplaintStatus
 from app.models.user import User
 from app.schemas.complaint import ComplaintOut, ComplaintPhotoOut
+from app.services import ml
 from app.services.detector import detect_issue
 from app.services.storage import save_photo, save_voice_note, to_public_path
 from app.services.verification import compare_with_before
@@ -31,6 +32,105 @@ def _is_escalated(c: Complaint) -> bool:
     if _status_value(c) != "submitted" or c.created_at is None:
         return False
     return datetime.utcnow() - c.created_at > timedelta(days=ESCALATION_DAYS)
+
+
+class CategoryTrendPoint(BaseModel):
+    period: str
+    count: int
+
+
+class CategoryStats(BaseModel):
+    category: str
+    count: int
+    percentage: float
+    trend: list[CategoryTrendPoint]
+
+
+class CategoryStatsResponse(BaseModel):
+    period_days: int
+    interval: str
+    total: int
+    categories: list[CategoryStats]
+
+
+def _parse_created_at(value: Optional[str]) -> Optional[datetime]:
+    if not value:
+        return None
+    try:
+        parsed = datetime.fromisoformat(value.strip().replace("Z", "+00:00"))
+    except (TypeError, ValueError):
+        return None
+    if parsed.tzinfo is None:
+        parsed = parsed.replace(tzinfo=timezone.utc)
+    return parsed.astimezone(timezone.utc)
+
+
+def _bucket_start(value: datetime, interval: str) -> datetime:
+    day = value.date()
+    if interval == "week":
+        day -= timedelta(days=day.weekday())
+    return datetime(day.year, day.month, day.day, tzinfo=timezone.utc)
+
+
+@router.get("/stats/by-category", response_model=CategoryStatsResponse)
+def stats_by_category(
+    days: int = Query(default=30, ge=1),
+    interval: Literal["day", "week"] = Query(default="week"),
+    db: Session = Depends(get_db),
+):
+    """Return category counts and a complete daily or weekly trend."""
+    now = datetime.now(timezone.utc)
+    cutoff = now - timedelta(days=days)
+    category_expr = func.coalesce(
+        func.nullif(func.trim(Complaint.issue_type), ""),
+        func.nullif(func.trim(Complaint.reported_category), ""),
+        "Uncategorized",
+    )
+
+    # Cast the timestamp to text so SQLite's DateTime result processor cannot
+    # fail on legacy string values; parse each value defensively below.
+    rows = db.query(
+        category_expr.label("category"),
+        cast(Complaint.created_at, String).label("created_at"),
+    ).all()
+
+    first_bucket = _bucket_start(cutoff, interval)
+    last_bucket = _bucket_start(now, interval)
+    periods = []
+    cursor = first_bucket
+    step = timedelta(days=1 if interval == "day" else 7)
+    while cursor <= last_bucket:
+        periods.append(cursor.date().isoformat())
+        cursor += step
+
+    category_counts: dict[str, dict[str, int]] = {}
+    for row in rows:
+        created_at = _parse_created_at(row.created_at)
+        if created_at is None or created_at < cutoff or created_at > now:
+            continue
+        category = row.category or "Uncategorized"
+        period = _bucket_start(created_at, interval).date().isoformat()
+        category_counts.setdefault(category, {}).setdefault(period, 0)
+        category_counts[category][period] += 1
+
+    total = sum(sum(counts.values()) for counts in category_counts.values())
+    categories = [
+        CategoryStats(
+            category=category,
+            count=sum(counts.values()),
+            percentage=round(sum(counts.values()) * 100 / total, 1) if total else 0.0,
+            trend=[CategoryTrendPoint(period=period, count=counts.get(period, 0)) for period in periods],
+        )
+        for category, counts in category_counts.items()
+    ]
+    categories.sort(key=lambda item: (-item.count, item.category))
+
+    return CategoryStatsResponse(
+        period_days=days,
+        interval=interval,
+        total=total,
+        categories=categories,
+    )
 
 
 def _to_out(c: Complaint) -> ComplaintOut:
@@ -104,9 +204,15 @@ async def create_complaint(
         db.commit()
         db.refresh(complaint)
 
-    # NOTE: no severity/priority is computed here. The ai-ml pipeline is a
-    # separate, honest step. Until it runs against this complaint,
-    # ai_status stays "unavailable" rather than a fabricated score.
+    # Score with the trained model. If it is unavailable, ai_status stays
+    # "unavailable" rather than a fabricated value.
+    prediction = ml.predict(complaint.description, complaint.reported_category)
+    if prediction is not None:
+        complaint.severity_score = float(prediction["severity"])
+        complaint.priority_score = float(prediction["priority"])
+        complaint.ai_status = "processed"
+        db.commit()
+        db.refresh(complaint)
 
     return _to_out(complaint)
 
@@ -243,3 +349,16 @@ def get_complaint(complaint_id: str, db: Session = Depends(get_db)):
     if not complaint:
         raise HTTPException(status_code=404, detail="Complaint not found")
     return _to_out(complaint)
+
+
+@router.get("/{complaint_id}/explanation")
+def get_complaint_explanation(complaint_id: str, db: Session = Depends(get_db)):
+    """Severity/priority prediction with SHAP reasons for one complaint."""
+    complaint = db.query(Complaint).filter(Complaint.id == complaint_id).first()
+    if not complaint:
+        raise HTTPException(status_code=404, detail="Complaint not found")
+    category = (complaint.issue_type or "").strip() or (complaint.reported_category or "").strip()
+    result = ml.explain(complaint.description, category)
+    if result is None:
+        raise HTTPException(status_code=503, detail="Severity/priority model is not available")
+    return result

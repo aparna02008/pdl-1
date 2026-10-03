@@ -8,8 +8,8 @@ function authHeaders() {
 export async function submitComplaint({ description, photos, voiceClip, location, reportedCategory, reportedSeverity }) {
   const form = new FormData()
   form.append('description', description)
-  if (location?.lat) form.append('lat', location.lat)
-  if (location?.lng) form.append('lng', location.lng)
+  if (location?.lat != null) form.append('lat', location.lat)
+  if (location?.lng != null) form.append('lng', location.lng)
   if (location?.address) form.append('address', location.address)
   if (reportedCategory) form.append('reported_category', reportedCategory)
   if (reportedSeverity) form.append('reported_severity', reportedSeverity)

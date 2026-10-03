@@ -40,7 +40,7 @@ export default function ReportIssue() {
   const [toast, setToast] = useState(null)
 
   const detailsDone = description.trim().length > 0
-  const locationDone = !!location?.lat || !!location?.address
+  const locationDone = (location?.lat != null && location?.lng != null) || !!location?.address
   const canSubmit = detailsDone && !submitting
 
   async function handleSubmit(e) {

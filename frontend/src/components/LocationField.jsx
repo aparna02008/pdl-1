@@ -29,7 +29,7 @@ export default function LocationField({ location, onChange }) {
     )
   }
 
-  const hasFix = !!location?.lat
+  const hasFix = location?.lat != null && location?.lng != null
 
   return (
     <div>

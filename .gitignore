@@ -8,8 +8,11 @@ ai-ml/database/labels/
 ai-ml/models/*.pt
 ai-ml/models/*.joblib
 .DS_Store
-ai-ml/database.zip 
+ai-ml/database.zip
 ai-ml/runs/backend/civisense.db
 backend/ai-ml/runs/
 backend/civisense.db
-backend/uploads/
+*.db
+backend/to_label.csv
+backend/labels_v1.csv
+backend/labels_v1_backup.csv
