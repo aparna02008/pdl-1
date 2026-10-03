@@ -34,6 +34,12 @@ def _is_escalated(c: Complaint) -> bool:
     return datetime.utcnow() - c.created_at > timedelta(days=ESCALATION_DAYS)
 
 
+def _scoring_category(c: Complaint) -> str:
+    """One category for both scoring and explanation. The citizen's choice is
+    used first because the YOLO model is not reliable on potholes yet."""
+    return (c.reported_category or "").strip() or (c.issue_type or "").strip()
+
+
 class CategoryTrendPoint(BaseModel):
     period: str
     count: int
@@ -206,7 +212,7 @@ async def create_complaint(
 
     # Score with the trained model. If it is unavailable, ai_status stays
     # "unavailable" rather than a fabricated value.
-    prediction = ml.predict(complaint.description, complaint.reported_category)
+    prediction = ml.predict(complaint.description, _scoring_category(complaint))
     if prediction is not None:
         complaint.severity_score = float(prediction["severity"])
         complaint.priority_score = float(prediction["priority"])
@@ -357,8 +363,7 @@ def get_complaint_explanation(complaint_id: str, db: Session = Depends(get_db)):
     complaint = db.query(Complaint).filter(Complaint.id == complaint_id).first()
     if not complaint:
         raise HTTPException(status_code=404, detail="Complaint not found")
-    category = (complaint.issue_type or "").strip() or (complaint.reported_category or "").strip()
-    result = ml.explain(complaint.description, category)
+    result = ml.explain(complaint.description, _scoring_category(complaint))
     if result is None:
         raise HTTPException(status_code=503, detail="Severity/priority model is not available")
     return result
