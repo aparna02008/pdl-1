@@ -349,12 +349,12 @@ const styles = {
     fontWeight: 500
   },
   primaryBtn: {
-    background: "var(--color-text, #1a1a1a)",
-    color: "#fff",
+    background: "var(--color-primary)",
+    color: "var(--color-text)",
     border: "none",
     borderRadius: "var(--radius-sm)",
     padding: "8px 16px",
-    fontWeight: 500
+    fontWeight: 600
   },
   statsGrid: {
     display: "grid",
