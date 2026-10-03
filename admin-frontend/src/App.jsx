@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from "react";
-import { fetchComplaints, fetchStats, updateStatus, resolveComplaint, fileUrl } from "./api/client.js";
+import { fetchComplaints, fetchStats, updateStatus, resolveComplaint, fileUrl, fetchHotspots } from "./api/client.js";
 import TrendChart from "./TrendChart.jsx";
 
 const STATUS_OPTIONS = ["submitted", "in_progress", "resolved"];
@@ -7,6 +7,7 @@ const STATUS_OPTIONS = ["submitted", "in_progress", "resolved"];
 export default function App() {
   const [complaints, setComplaints] = useState([]);
   const [stats, setStats] = useState(null);
+  const [hotspots, setHotspots] = useState([]);
   const [loadState, setLoadState] = useState("loading"); // loading | loaded | error
   const [error, setError] = useState(null);
 
@@ -21,11 +22,13 @@ export default function App() {
     setError(null);
     Promise.all([
       fetchComplaints({ status: statusFilter || undefined, issueType: issueTypeFilter || undefined }),
-      fetchStats().catch(() => null) // stats endpoint failing shouldn't block the whole page
+      fetchStats().catch(() => null), // stats endpoint failing shouldn't block the whole page
+      fetchHotspots().catch(() => [])
     ])
-      .then(([complaintsData, statsData]) => {
+      .then(([complaintsData, statsData, hotspotsData]) => {
         setComplaints(complaintsData);
         setStats(statsData);
+        setHotspots(hotspotsData);
         setLoadState("loaded");
       })
       .catch((err) => {
@@ -89,6 +92,20 @@ export default function App() {
       <div className="section-title">Complaints by category</div>
       <div className="card" style={{ padding: 16, marginBottom: 24 }}>
         <TrendChart byCategory={stats?.by_category} />
+      </div>
+
+      <div className="section-title">Hotspots (repeated issues)</div>
+      <div className="card" style={{ padding: 16, marginBottom: 24 }}>
+        {hotspots.length === 0 ? (
+          <p className="muted">No hotspots yet.</p>
+        ) : (
+          hotspots.map((h, i) => (
+            <div key={i} style={{ padding: "8px 0", borderBottom: "1px solid var(--color-border)" }}>
+              <strong>{h.issue}</strong> · {h.count} reports near {h.address || `${h.lat}, ${h.lng}`}
+              <div className="muted">{h.recommendation}</div>
+            </div>
+          ))
+        )}
       </div>
 
       <div className="filter-bar">

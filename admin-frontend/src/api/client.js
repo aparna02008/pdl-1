@@ -48,3 +48,7 @@ export async function resolveComplaint(id, afterPhoto) {
   });
   return handle(response);
 }
+export async function fetchHotspots() {
+  const response = await fetch(`${API_URL}/complaints/stats/hotspots`);
+  return handle(response);
+}

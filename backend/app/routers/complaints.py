@@ -12,7 +12,7 @@ from app.models.complaint import Complaint, ComplaintPhoto, ComplaintStatus
 from app.models.user import User
 from app.schemas.complaint import ComplaintOut, ComplaintPhotoOut
 from app.services.storage import save_photo, save_voice_note, to_public_path
-
+from collections import defaultdict
 router = APIRouter(prefix="/complaints", tags=["complaints"])
 
 # A complaint still "submitted" after this many days is flagged as escalated.
@@ -188,6 +188,33 @@ def stats_summary(db: Session = Depends(get_db)):
         "by_status": by_status,
         "by_category": {category: count for category, count in rows},
     }
+
+HOTSPOT_MIN_REPEATS = 3
+
+
+@router.get("/stats/hotspots")
+def hotspots(db: Session = Depends(get_db)):
+    """Places where the same kind of issue keeps being reported (real data only)."""
+    groups = defaultdict(list)
+    rows = db.query(Complaint).filter(Complaint.lat.isnot(None), Complaint.lng.isnot(None)).all()
+    for c in rows:
+        kind = c.issue_type or c.reported_category or "uncategorised"
+        key = (round(c.lat, 3), round(c.lng, 3), kind)
+        groups[key].append(c)
+
+    result = []
+    for (lat, lng, kind), items in groups.items():
+        if len(items) >= HOTSPOT_MIN_REPEATS:
+            result.append({
+                "lat": lat,
+                "lng": lng,
+                "issue": kind,
+                "count": len(items),
+                "address": next((i.address for i in items if i.address), None),
+                "recommendation": "Repeated issue: recommend a permanent fix, not a one-off repair.",
+            })
+    result.sort(key=lambda r: r["count"], reverse=True)
+    return result
 
 
 @router.get("/{complaint_id}", response_model=ComplaintOut)
