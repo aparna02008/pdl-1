@@ -12,6 +12,7 @@ from app.models.complaint import Complaint, ComplaintPhoto, ComplaintStatus
 from app.models.user import User
 from app.schemas.complaint import ComplaintOut, ComplaintPhotoOut
 from app.services.storage import save_photo, save_voice_note, to_public_path
+from app.services import ml
 
 router = APIRouter(prefix="/complaints", tags=["complaints"])
 
@@ -178,10 +179,15 @@ async def create_complaint(
     db.commit()
     db.refresh(complaint)
 
-    # NOTE: no severity/priority is computed here. The ai-ml pipeline is a
-    # separate, honest step — see ai-ml/README.md. Until it runs against
-    # this complaint, ai_status stays "unavailable" rather than a fabricated
-    # score, per the project's no-fake-AI rule.
+        # Score with the trained model. If it is unavailable, ai_status stays
+    # "unavailable" rather than a fabricated value.
+    prediction = ml.predict(complaint.description, complaint.reported_category)
+    if prediction is not None:
+        complaint.severity_score = float(prediction["severity"])
+        complaint.priority_score = float(prediction["priority"])
+        complaint.ai_status = "processed"
+        db.commit()
+        db.refresh(complaint)
 
     return _to_out(complaint)
 
@@ -246,3 +252,17 @@ def get_complaint(complaint_id: str, db: Session = Depends(get_db)):
     if not complaint:
         raise HTTPException(status_code=404, detail="Complaint not found")
     return _to_out(complaint)
+
+
+
+@router.get("/{complaint_id}/explanation")
+def get_complaint_explanation(complaint_id: str, db: Session = Depends(get_db)):
+    """Severity/priority prediction with SHAP reasons for one complaint."""
+    complaint = db.query(Complaint).filter(Complaint.id == complaint_id).first()
+    if not complaint:
+        raise HTTPException(status_code=404, detail="Complaint not found")
+    category = (complaint.issue_type or "").strip() or (complaint.reported_category or "").strip()
+    result = ml.explain(complaint.description, category)
+    if result is None:
+        raise HTTPException(status_code=503, detail="Severity/priority model is not available")
+    return result
