@@ -13,7 +13,7 @@ from app.models.complaint import Complaint, ComplaintPhoto, ComplaintStatus
 from app.models.user import User
 from app.schemas.complaint import ComplaintOut, ComplaintPhotoOut
 from app.services import ml
-from app.services.detector import detect_issue
+from app.services.detector import detect_issue, detect_issue_in_bytes
 from app.services.storage import save_photo, save_voice_note, to_public_path
 from app.services.verification import compare_with_before
 
@@ -268,7 +268,8 @@ async def resolve_complaint(
     db: Session = Depends(get_db),
 ):
     """Mark resolved. An 'after' photo is optional, but it must not be a
-    copy of the original report photo."""
+    copy of the original report photo, and the detector must not still see
+    the reported issue in it."""
     complaint = db.query(Complaint).filter(Complaint.id == complaint_id).first()
     if not complaint:
         raise HTTPException(status_code=404, detail="Complaint not found")
@@ -283,6 +284,20 @@ async def resolve_complaint(
                     status_code=422,
                     detail="The after photo looks the same as the original report photo. Please upload a photo taken after the repair.",
                 )
+
+        # YOLO check: does the after photo still show the reported issue?
+        # If the model is unavailable or unsure, detect returns None and we do not block.
+        expected = (complaint.issue_type or complaint.reported_category or "").strip().lower()
+        found = detect_issue_in_bytes(data)
+        if found and expected and found[0].lower() == expected:
+            raise HTTPException(
+                status_code=422,
+                detail=(
+                    f"The after photo still appears to show a {found[0].replace('_', ' ')} "
+                    f"({found[1]:.0%} confidence). Please upload a photo taken after the repair."
+                ),
+            )
+
         complaint.after_photo_path = await save_photo(after_photo)
 
     complaint.status = ComplaintStatus("resolved")
