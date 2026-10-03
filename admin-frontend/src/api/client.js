@@ -36,6 +36,11 @@ export async function fetchHotspots() {
   return handle(response);
 }
 
+export async function fetchExplanation(id) {
+  const response = await fetch(`${API_URL}/complaints/${id}/explanation`);
+  return handle(response);
+}
+
 export async function updateStatus(id, status) {
   const response = await fetch(`${API_URL}/complaints/${id}/status`, {
     method: "PATCH",

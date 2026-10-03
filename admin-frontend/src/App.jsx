@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback } from "react";
-import { fetchComplaints, fetchStats, updateStatus, resolveComplaint, fileUrl, fetchHotspots } from "./api/client.js";
+import { fetchComplaints, fetchStats, updateStatus, resolveComplaint, fileUrl, fetchHotspots, fetchExplanation } from "./api/client.js";
 import TrendChart from "./TrendChart.jsx";
+import { severityLabel, priorityLabel } from "./labels.js";
 
 const STATUS_OPTIONS = ["submitted", "in_progress", "resolved"];
 
@@ -16,6 +17,7 @@ export default function App() {
 
   const [resolving, setResolving] = useState(null); // complaint being resolved
   const [saving, setSaving] = useState(false);
+  const [explaining, setExplaining] = useState(null); // complaint whose "why" is open
 
   const load = useCallback(() => {
     setLoadState("loading");
@@ -137,12 +139,12 @@ export default function App() {
           <div className="section-title">
             Needs attention <span className="count-pill">{pending.length}</span>
           </div>
-          <ComplaintTable complaints={pending} onStatusChange={handleStatusChange} emptyText="Nothing pending — all clear." />
+          <ComplaintTable complaints={pending} onStatusChange={handleStatusChange} onWhy={setExplaining} emptyText="Nothing pending — all clear." />
 
           <div className="section-title">
             Resolved <span className="count-pill">{resolved.length}</span>
           </div>
-          <ComplaintTable complaints={resolved} onStatusChange={handleStatusChange} emptyText="No resolved complaints yet." />
+          <ComplaintTable complaints={resolved} onStatusChange={handleStatusChange} onWhy={setExplaining} emptyText="No resolved complaints yet." />
         </>
       )}
 
@@ -153,6 +155,10 @@ export default function App() {
           onCancel={() => setResolving(null)}
           onConfirm={confirmResolve}
         />
+      )}
+
+      {explaining && (
+        <ExplanationDialog complaint={explaining} onClose={() => setExplaining(null)} />
       )}
     </div>
   );
@@ -209,7 +215,17 @@ function PhotoCell({ c }) {
   );
 }
 
-function ComplaintTable({ complaints, onStatusChange, emptyText }) {
+function severityText(value) {
+  if (value == null) return <span className="muted">Not available</span>;
+  return severityLabel(value);
+}
+
+function priorityText(value) {
+  if (value == null) return <span className="muted">Not available</span>;
+  return priorityLabel(value);
+}
+
+function ComplaintTable({ complaints, onStatusChange, onWhy, emptyText }) {
   if (complaints.length === 0) {
     return <div className="card"><div className="empty-row">{emptyText}</div></div>;
   }
@@ -221,6 +237,7 @@ function ComplaintTable({ complaints, onStatusChange, emptyText }) {
           <tr>
             <th>ID</th>
             <th>Issue type (AI)</th>
+            <th>Severity</th>
             <th>Priority</th>
             <th>Location</th>
             <th>Photos</th>
@@ -233,10 +250,14 @@ function ComplaintTable({ complaints, onStatusChange, emptyText }) {
             <tr key={c.id}>
               <td>{String(c.id).slice(0, 8)}</td>
               <td>{c.issue_type ?? <span className="muted">AI: unavailable</span>}</td>
+              <td>{severityText(c.severity_score)}</td>
               <td>
-                {c.priority_score != null
-                  ? c.priority_score
-                  : <span className="muted">Not available</span>}
+                {priorityText(c.priority_score)}
+                {c.priority_score != null && (
+                  <div>
+                    <button onClick={() => onWhy(c)} style={styles.whyBtn}>Why</button>
+                  </div>
+                )}
               </td>
               <td>
                 {c.lat != null && c.lng != null
@@ -264,6 +285,78 @@ function ComplaintTable({ complaints, onStatusChange, emptyText }) {
           ))}
         </tbody>
       </table>
+    </div>
+  );
+}
+
+function ReasonList({ title, level, label, confidence, reasons }) {
+  return (
+    <div style={{ marginBottom: 16 }}>
+      <div style={{ fontWeight: 600, marginBottom: 4 }}>
+        {title}: {label} <span className="muted">(level {level})</span>
+        {confidence != null && (
+          <span className="muted"> · model confidence {Math.round(confidence * 100)}%</span>
+        )}
+      </div>
+      {(reasons || []).map((r, i) => (
+        <div key={i} style={styles.reasonRow}>
+          <span>{r.feature}</span>
+          <span style={{ color: r.direction === "raises" ? "var(--color-danger)" : "var(--color-accent)" }}>
+            {r.direction}
+          </span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function ExplanationDialog({ complaint, onClose }) {
+  const [data, setData] = useState(null);
+  const [err, setErr] = useState(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetchExplanation(complaint.id)
+      .then((d) => { if (!cancelled) setData(d); })
+      .catch((e) => { if (!cancelled) setErr(e.message || "Explanation unavailable"); });
+    return () => { cancelled = true; };
+  }, [complaint.id]);
+
+  return (
+    <div style={styles.overlay}>
+      <div className="card" style={styles.dialog}>
+        <h2 style={{ marginTop: 0 }}>Why this score</h2>
+        <p className="muted">"{complaint.description}"</p>
+
+        {!data && !err && <p className="muted">Loading…</p>}
+        {err && <p style={{ color: "var(--color-danger)" }}>{err}</p>}
+
+        {data && (
+          <>
+            <ReasonList
+              title="Severity"
+              level={data.severity}
+              label={severityLabel(data.severity)}
+              confidence={data.severity_confidence}
+              reasons={data.severity_reasons}
+            />
+            <ReasonList
+              title="Priority"
+              level={data.priority}
+              label={priorityLabel(data.priority)}
+              confidence={data.priority_confidence}
+              reasons={data.priority_reasons}
+            />
+            <p className="muted" style={{ fontSize: 12 }}>
+              Reasons come from a small model trained on a limited labelled set. Treat them as a guide for the admin, not a decision.
+            </p>
+          </>
+        )}
+
+        <div style={styles.dialogActions}>
+          <button onClick={onClose} style={styles.refreshBtn}>Close</button>
+        </div>
+      </div>
     </div>
   );
 }
@@ -356,6 +449,22 @@ const styles = {
     padding: "8px 16px",
     fontWeight: 600
   },
+  whyBtn: {
+    background: "none",
+    border: "none",
+    padding: 0,
+    marginTop: 2,
+    fontSize: 12,
+    color: "var(--color-accent)",
+    textDecoration: "underline"
+  },
+  reasonRow: {
+    display: "flex",
+    justifyContent: "space-between",
+    fontSize: 14,
+    padding: "4px 0",
+    borderBottom: "1px solid var(--color-border)"
+  },
   statsGrid: {
     display: "grid",
     gridTemplateColumns: "repeat(4, 1fr)",
@@ -376,7 +485,7 @@ const styles = {
     padding: 16,
     zIndex: 10
   },
-  dialog: { width: "100%", maxWidth: 560, padding: 24, background: "var(--color-surface, #fff)" },
+  dialog: { width: "100%", maxWidth: 560, padding: 24, background: "var(--color-surface, #fff)", maxHeight: "90vh", overflowY: "auto" },
   compare: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, margin: "16px 0" },
   compareLabel: { fontSize: 13, fontWeight: 600, marginBottom: 6 },
   compareImg: { width: "100%", height: 180, objectFit: "cover", borderRadius: 4, border: "1px solid var(--color-border)" },
