@@ -12,6 +12,7 @@ from app.database import get_db
 from app.models.complaint import Complaint, ComplaintPhoto, ComplaintStatus
 from app.models.user import User
 from app.schemas.complaint import ComplaintOut, ComplaintPhotoOut
+from app.services.detector import detect_issue
 from app.services.storage import save_photo, save_voice_note, to_public_path
 from app.services.verification import compare_with_before
 
@@ -96,6 +97,12 @@ async def create_complaint(
 
     db.commit()
     db.refresh(complaint)
+
+    # YOLO: only sets issue_type when confidence >= threshold; else stays null.
+    if complaint.photos:
+        complaint.issue_type = detect_issue(complaint.photos[0].file_path)
+        db.commit()
+        db.refresh(complaint)
 
     # NOTE: no severity/priority is computed here. The ai-ml pipeline is a
     # separate, honest step. Until it runs against this complaint,
