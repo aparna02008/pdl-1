@@ -3,7 +3,9 @@ export const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
 async function handle(response) {
   if (!response.ok) {
     const text = await response.text().catch(() => "");
-    throw new Error(text || `Request failed with status ${response.status}`);
+    let message = text;
+    try { message = JSON.parse(text).detail || text; } catch { /* not JSON */ }
+    throw new Error(message || `Request failed with status ${response.status}`);
   }
   return response.json();
 }
@@ -29,6 +31,11 @@ export async function fetchStats() {
   return handle(response);
 }
 
+export async function fetchHotspots() {
+  const response = await fetch(`${API_URL}/complaints/stats/hotspots`);
+  return handle(response);
+}
+
 export async function updateStatus(id, status) {
   const response = await fetch(`${API_URL}/complaints/${id}/status`, {
     method: "PATCH",
@@ -46,9 +53,5 @@ export async function resolveComplaint(id, afterPhoto) {
     method: "POST",
     body: form // don't set Content-Type; the browser adds it with the boundary
   });
-  return handle(response);
-}
-export async function fetchHotspots() {
-  const response = await fetch(`${API_URL}/complaints/stats/hotspots`);
   return handle(response);
 }

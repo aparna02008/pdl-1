@@ -1,3 +1,4 @@
+from collections import defaultdict
 from datetime import datetime, timedelta
 from typing import Optional
 
@@ -12,7 +13,8 @@ from app.models.complaint import Complaint, ComplaintPhoto, ComplaintStatus
 from app.models.user import User
 from app.schemas.complaint import ComplaintOut, ComplaintPhotoOut
 from app.services.storage import save_photo, save_voice_note, to_public_path
-from collections import defaultdict
+from app.services.verification import compare_with_before
+
 router = APIRouter(prefix="/complaints", tags=["complaints"])
 
 # A complaint still "submitted" after this many days is flagged as escalated.
@@ -152,12 +154,22 @@ async def resolve_complaint(
     after_photo: Optional[UploadFile] = File(default=None),
     db: Session = Depends(get_db),
 ):
-    """Mark resolved. An 'after' photo is optional."""
+    """Mark resolved. An 'after' photo is optional, but it must not be a
+    copy of the original report photo."""
     complaint = db.query(Complaint).filter(Complaint.id == complaint_id).first()
     if not complaint:
         raise HTTPException(status_code=404, detail="Complaint not found")
 
     if after_photo is not None and after_photo.filename:
+        data = await after_photo.read()
+        await after_photo.seek(0)
+        if complaint.photos:
+            result = compare_with_before(complaint.photos[0].file_path, data)
+            if result and result["too_similar"]:
+                raise HTTPException(
+                    status_code=422,
+                    detail="The after photo looks the same as the original report photo. Please upload a photo taken after the repair.",
+                )
         complaint.after_photo_path = await save_photo(after_photo)
 
     complaint.status = ComplaintStatus("resolved")
@@ -188,6 +200,7 @@ def stats_summary(db: Session = Depends(get_db)):
         "by_status": by_status,
         "by_category": {category: count for category, count in rows},
     }
+
 
 HOTSPOT_MIN_REPEATS = 3
 
