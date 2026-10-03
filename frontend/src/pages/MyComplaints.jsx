@@ -1,7 +1,13 @@
 import { useEffect, useState } from 'react'
 import { fetchMyComplaints } from '../api/complaints'
 import { IconEmptyBox, IconAlert } from '../components/Icons'
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000'
 
+function fileUrl(path) {
+  if (!path) return null
+  if (path.startsWith('http')) return path
+  return `${API_URL}${path.startsWith('/') ? '' : '/'}${path}`
+}
 const STATUS_LABEL = {
   submitted: 'Submitted',
   in_progress: 'In progress',
@@ -51,7 +57,7 @@ export default function MyComplaints() {
 
         {!state.loading && !state.error && state.data.map((c) => (
           <div className="complaint" key={c.id}>
-            {c.photo_url && <img className="complaint__thumb" src={c.photo_url} alt="" />}
+            {c.photo_url && <img className="complaint__thumb" src={fileUrl(c.photo_url)} alt="" />}
             <div className="complaint__body">
               <div className="complaint__top">
                 <span className="complaint__desc">{c.description}</span>
