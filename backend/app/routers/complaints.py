@@ -16,7 +16,7 @@ from app.services.storage import save_photo, save_voice_note, to_public_path
 router = APIRouter(prefix="/complaints", tags=["complaints"])
 
 # A complaint still "submitted" after this many days is flagged as escalated.
-ESCALATION_DAYS = 0
+ESCALATION_DAYS = 7
 
 
 def _status_value(c: Complaint) -> str:
