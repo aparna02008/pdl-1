@@ -37,7 +37,20 @@ def login(body: LoginRequest, db: Session = Depends(get_db)):
     token = create_access_token(user.id)
     return TokenResponse(access_token=token, user=UserOut.model_validate(user))
 
+@router.post("/admin-login", response_model=TokenResponse)
+def admin_login(body: LoginRequest, db: Session = Depends(get_db)):
+    user = db.query(User).filter(User.email == body.email.lower()).first()
+    if not user or not verify_password(body.password, user.hashed_password):
+        raise HTTPException(status_code=401, detail="Incorrect email or password")
+    if user.role != "admin":
+        raise HTTPException(status_code=403, detail="This account does not have admin access")
 
+    token = create_access_token(user.id)
+    return TokenResponse(access_token=token, user=UserOut.model_validate(user))
 @router.get("/me", response_model=UserOut)
 def me(current_user: User = Depends(get_current_user)):
     return UserOut.model_validate(current_user)
+def require_admin(user: User = Depends(get_current_user)) -> User:
+    if getattr(user, "role", None) != "admin":
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Admin access required")
+    return user

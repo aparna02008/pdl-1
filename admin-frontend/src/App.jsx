@@ -1,11 +1,13 @@
 import { useEffect, useState, useCallback } from "react";
 import { fetchComplaints, fetchStats, updateStatus, resolveComplaint, fileUrl, fetchHotspots, fetchExplanation } from "./api/client.js";
+import { useAdminAuth } from "./auth/AdminAuthContext.jsx";
 import TrendChart from "./TrendChart.jsx";
 import { severityLabel, priorityLabel } from "./labels.js";
 
 const STATUS_OPTIONS = ["submitted", "in_progress", "resolved"];
 
 export default function App() {
+  const { logout } = useAdminAuth();
   const [complaints, setComplaints] = useState([]);
   const [stats, setStats] = useState(null);
   const [hotspots, setHotspots] = useState([]);
@@ -86,7 +88,10 @@ export default function App() {
           <h1>CiviAI Admin</h1>
           <p>Complaints, priorities, and resolution status.</p>
         </div>
-        <button onClick={load} style={styles.refreshBtn}>Refresh</button>
+        <div style={{ display: "flex", gap: 8 }}>
+          <button onClick={load} style={styles.refreshBtn}>Refresh</button>
+          <button onClick={logout} style={styles.refreshBtn}>Sign out</button>
+        </div>
       </header>
 
       <StatsRow stats={stats} totalKnown={complaints.length} />
