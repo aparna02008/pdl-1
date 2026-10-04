@@ -83,7 +83,7 @@ export default function App() {
     <div style={styles.page}>
       <header style={styles.header}>
         <div>
-          <h1>CiviSense Admin</h1>
+          <h1>CiviAI Admin</h1>
           <p>Complaints, priorities, and resolution status.</p>
         </div>
         <button onClick={load} style={styles.refreshBtn}>Refresh</button>

@@ -7,7 +7,7 @@ export default function AuthLayout({ eyebrow, title, subtitle, children }) {
       <div className="auth-visual">
         <div className="auth-visual__brand">
           <LogoMark className="auth-visual__mark" />
-          <span>CiviSense</span>
+          <span>CiviAI</span>
         </div>
         <RoadIllustration className="auth-visual__art" />
         <div className="auth-visual__copy">

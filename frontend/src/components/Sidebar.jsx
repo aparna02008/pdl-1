@@ -6,7 +6,7 @@ export default function Sidebar() {
     <aside className="sidebar">
       <div className="sidebar__mark">
         <LogoMark className="sidebar__mark-glyph" />
-        <span className="sidebar__mark-text">CiviSense</span>
+        <span className="sidebar__mark-text">CiviAI</span>
       </div>
 
       <nav className="sidebar__nav">

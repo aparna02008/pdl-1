@@ -190,7 +190,7 @@ export default function ReportIssue() {
               <span className="section-head__badge">2</span>
               Photos
             </span>
-            <span className="section-head__optional">Optional</span>
+            <span className="section-head__optional">Required</span>
           </div>
           <PhotoDropzone files={photos} onChange={setPhotos} />
         </div>

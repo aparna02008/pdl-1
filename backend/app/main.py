@@ -16,7 +16,7 @@ Base.metadata.create_all(bind=engine)
 
 Path(settings.upload_dir).mkdir(parents=True, exist_ok=True)
 
-app = FastAPI(title="CiviSense API", version="0.1.0")
+app = FastAPI(title="CiviAI API", version="0.1.0")
 
 app.add_middleware(
     CORSMiddleware,
