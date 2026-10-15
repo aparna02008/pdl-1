@@ -4,14 +4,25 @@ import { IconPin, IconCheck } from './Icons'
 export default function LocationField({ location, onChange }) {
   const [status, setStatus] = useState('idle') // idle | locating | error
   const [manual, setManual] = useState(false)
+  const [reason, setReason] = useState('')
+
+  function fail(message) {
+    setReason(message)
+    setStatus('error')
+    setManual(true)
+  }
 
   function detect() {
     if (!navigator.geolocation) {
-      setStatus('error')
-      setManual(true)
+      fail("This device can't share its location")
+      return
+    }
+    if (!window.isSecureContext) {
+      fail('Location needs a secure (https) connection')
       return
     }
     setStatus('locating')
+    setReason('')
     navigator.geolocation.getCurrentPosition(
       (pos) => {
         onChange({
@@ -21,11 +32,12 @@ export default function LocationField({ location, onChange }) {
         })
         setStatus('idle')
       },
-      () => {
-        setStatus('error')
-        setManual(true)
+      (err) => {
+        if (err.code === 1) fail('Location permission was denied')
+        else if (err.code === 3) fail('Getting your location took too long')
+        else fail('Your location is not available right now')
       },
-      { enableHighAccuracy: true, timeout: 8000 }
+      { enableHighAccuracy: true, timeout: 15000 }
     )
   }
 
@@ -41,7 +53,7 @@ export default function LocationField({ location, onChange }) {
             : status === 'locating'
               ? 'Getting your location…'
               : status === 'error'
-                ? "Couldn't get your location automatically — enter it below"
+                ? `${reason}. Enter a landmark or address below.`
                 : 'Attach your current location'}
         </span>
         <button type="button" className="locate__action" onClick={detect} disabled={status === 'locating'}>

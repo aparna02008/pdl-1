@@ -2,6 +2,7 @@ import { useEffect, useState, useCallback } from "react";
 import { fetchComplaints, fetchStats, updateStatus, resolveComplaint, fileUrl, fetchHotspots, fetchExplanation } from "./api/client.js";
 import { useAdminAuth } from "./auth/AdminAuthContext.jsx";
 import TrendChart from "./TrendChart.jsx";
+import MapView from "./MapView.jsx";
 import { severityLabel, priorityLabel } from "./labels.js";
 
 const STATUS_OPTIONS = ["submitted", "in_progress", "resolved"];
@@ -99,6 +100,11 @@ export default function App() {
       <div className="section-title">Complaints by category</div>
       <div className="card" style={{ padding: 16, marginBottom: 24 }}>
         <TrendChart byCategory={stats?.by_category} />
+      </div>
+
+      <div className="section-title">Map view</div>
+      <div className="card" style={{ padding: 16, marginBottom: 24 }}>
+        <MapView complaints={complaints} onSelectComplaint={setExplaining} />
       </div>
 
       <div className="section-title">Hotspots (repeated issues)</div>
